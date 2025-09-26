@@ -1,0 +1,128 @@
+# NeMo Guardrails Values
+# This file enables and configures the NeMo Guardrails microservice
+
+# Enable the guardrails component
+guardrails:
+  enabled: true
+  
+  # Basic configuration
+  replicaCount: 1
+  
+  # Image configuration (will use default from chart)
+  image:
+    tag: ""  # Will use latest available
+  
+  # Environment variables
+  env:
+    # NIM Integration - Point to our local NIM service
+    NIM_ENDPOINT_URL: "http://nemo-guardrails-nim:8000/v1"
+    CONFIG_STORE_PATH: "/app/services/guardrails/config-store"
+    DEFAULT_CONFIG_ID: "default"
+    DEFAULT_LLM_PROVIDER: "nim"
+    GUARDRAILS_HOST: "0.0.0.0"
+    GUARDRAILS_PORT: "7331"
+    
+    # Guardrails configuration
+    DEMO: "False"
+    
+    # Enable LLM protection
+    ENABLE_LLM_PROTECTION: "True"
+    LLM_PROVIDER_NAME: "nemotron-8b"
+    
+    # Safety thresholds
+    SAFETY_THRESHOLD: "0.7"
+    HARM_CONTENT_THRESHOLD: "0.8"
+    HALLUCINATION_THRESHOLD: "0.6"
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 7331
+  
+  # PostgreSQL configuration (enabled by default)
+  postgresql:
+    enabled: true
+    auth:
+      database: "nemo-guardrails"
+      username: "guardrails"
+      password: "guardrails"
+  
+  # Resource limits (adjust as needed)
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+# Disable other components to deploy only guardrails
+customizer:
+  enabled: false
+
+evaluator:
+  enabled: false
+
+entity-store:
+  enabled: false
+
+data-store:
+  enabled: false
+
+nemo-operator:
+  enabled: false
+
+deployment-management:
+  enabled: false
+
+nim-proxy:
+  enabled: false
+
+nim:
+  enabled: true
+  
+  # Basic NIM configuration
+  replicaCount: 1
+  
+  # Ensure PVC gets deleted on uninstall
+  persistence:
+    enabled: true
+    persistencePolicy: delete
+    # Override any resource policy that prevents deletion
+    annotations:
+      helm.sh/resource-policy: delete
+  
+  # Override to use Nemotron 8B model
+  # Using: nim/nvidia/llama-3.1-nemotron-nano-8b-v1
+  image:
+    repository: nvcr.io/nim/nvidia/llama-3.1-nemotron-nano-8b-v1
+    tag: "1.8.4"  # Latest stable version
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 8000
+  
+  # Resource limits (adjusted for Nemotron 8B model)
+  resources:
+    requests:
+      memory: 48Gi  
+    limits:
+      memory: 56Gi  
+  
+  # NIM-specific configuration - only override what we need
+  env:
+    - name: MODEL_NAME
+      value: "llama-3.1-nemotron-nano-8b-v1"
+    - name: API_TYPE
+      value: "openai"
+    - name: MAX_CONCURRENT_REQUESTS
+      value: "4"
+    - name: MAX_BATCH_SIZE
+      value: "1"
+
+nim-operator:
+  enabled: false
+
+auditor:
+  enabled: false
